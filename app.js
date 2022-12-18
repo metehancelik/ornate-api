@@ -21,8 +21,20 @@ if (process.env.NODE_ENV === "development") {
     app.use(morgan("dev"))
 }
 
-// opening cors for development
-app.use(cors({ credentials: true, origin: 'https://ornateapp.netlify.app/' }));
+const corsOpts = {
+    origin: '*',
+
+    methods: [
+        'GET',
+        'POST',
+    ],
+
+    allowedHeaders: [
+        'Content-Type',
+    ],
+};
+
+app.use(cors(corsOpts));
 
 // setting security HTTP headers
 app.use(helmet({
