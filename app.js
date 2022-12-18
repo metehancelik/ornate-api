@@ -22,7 +22,7 @@ if (process.env.NODE_ENV === "development") {
 }
 
 const corsOptions = {
-    origin: 'https://ornateapp.netlify.app/',
+    origin: 'https://ornateapp.netlify.app',
     credentials: true,            //access-control-allow-credentials:true
     optionSuccessStatus: 200
 }
