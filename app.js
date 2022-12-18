@@ -47,7 +47,7 @@ app.use(`/api/${process.env.API_VERSION}`, api)
 
 // returning the main index.html, so react-router render the route in the client
 app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../", "client/", "build", "index.html",))
+    res.send('404 not found')
 })
 
 // setting up a 404 error handler
