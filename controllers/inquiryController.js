@@ -1,66 +1,68 @@
-const AppError = require("../utils/appError");
-const catchAsync = require("../utils/catchAsync");
-const Inquiry = require("../schemas/inquiry");
+const AppError = require('../utils/appError');
+const catchAsync = require('../utils/catchAsync');
+const Inquiry = require('../schemas/inquiry');
+const User = require('../schemas/user');
+
+exports.getInquiryCount = catchAsync(async (req, res) => {
+  let data =
+    req.query.q === undefined
+      ? await Inquiry.countDocuments()
+      : await Inquiry.countDocuments({
+        $or: [
+          { offerupNick: { $regex: '.*' + req.query.q + '.*' } },
+          { customerName: { $regex: '.*' + req.query.q + '.*' } },
+          { productName: { $regex: '.*' + req.query.q + '.*' } },
+        ],
+      });
+  res.status(200).send({ status: 'success', results: data });
+});
 
 exports.getAllInquiries = catchAsync(async (req, res, next) => {
-  let data = await Inquiry.find().populate({
-    path: "userId",
-    select: "firstName lastName offerupNick",
-  });
+  let limit = 10;
+  let query =
+    req.query.q === undefined
+      ? {}
+      : {
+        $or: [
+          { offerupNick: { $regex: '.*' + req.query.q + '.*' } },
+          { customerName: { $regex: '.*' + req.query.q + '.*' } },
+          { productName: { $regex: '.*' + req.query.q + '.*' } },
+        ],
+      };
 
-  data = JSON.parse(JSON.stringify(data));
+  let data = await Inquiry.find(query)
+    .sort({ createdAt: -1 })
+    .skip(limit * (req.query.page - 1))
+    .limit(limit);
 
-  for (let d of data) {
-    d.customerName = d.customerName;
-    d.productName = d.productName;
-    d.to = d.to;
-    d.notes = d.notes;
-    d.firstName = d.userId.firstName;
-    d.lastName = d.userId.lastName;
-    d.offerupNick = d.userId.offerupNick;
-    delete d.userId;
-    delete d.__v;
-  }
-  data = data.reverse()
-  res.status(200).send({ status: "success", results: data.length, data });
+  res.status(200).send({ status: 'success', data });
 });
 
 //GET INQUIRIES BY USER ID
 exports.getInquiriesByUserId = catchAsync(async (req, res, next) => {
   let data = await Inquiry.find({ userId: req.params.userId });
 
-  data = JSON.parse(JSON.stringify(data));
-
-  for (let d of data) {
-    d.customerName = d.customerName;
-    d.productName = d.productName;
-    d.to = d.to;
-    d.notes = d.notes;
-    d.firstName = d.userId.firstName;
-    d.lastName = d.userId.lastName;
-    d.offerupNick = d.userId.offerupNick;
-    delete d.userId;
-    delete d.__v;
-  }
-
-  data = data.reverse()
-  res.status(200).send({ status: "success", results: data.length, data });
+  data = JSON.parse(JSON.stringify(data)).reverse();
+  res.status(200).send({ status: 'success', results: data.length, data });
 });
 
 //CREATE INQUIRY
 exports.createInquiry = catchAsync(async (req, res) => {
   const { customerName, productName, to, notes, region, userId } = req.body;
 
+  const user = await User.findById(userId);
   const inquiry = await Inquiry.create({
     customerName,
     productName,
     to,
     notes,
     region,
-    userId,
+    offerupNick: user.offerupNick,
+    firstName: user.firstName,
+    lastName: user.lastName,
   });
 
-  res.status(201).send({ status: "success", data: inquiry });
+  res.status(201).send({ status: 'success', data: inquiry });
 });
 
 //UPDATE INQUIRY
@@ -72,13 +74,13 @@ exports.updateInquiryById = catchAsync(async (req, res, next) => {
     { upsert: true }
   );
 
-  res.status(200).send({ status: "success", data: inquiry });
+  res.status(200).send({ status: 'success', data: inquiry });
 });
 
 exports.getInquiryById = catchAsync(async (req, res, next) => {
-  console.log("params", req.params);
+  console.log('params', req.params);
   let inquiry = await Inquiry.findOne({ _id: req.params.id });
   inquiry = JSON.parse(JSON.stringify(inquiry));
 
-  return res.status(201).send({ status: "success", data: inquiry });
+  return res.status(201).send({ status: 'success', data: inquiry });
 });
