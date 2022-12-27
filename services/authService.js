@@ -74,7 +74,7 @@ const createSession = async (req, user) => {
     const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000 * +process.env.JWT_SESSION_EXPIRY.slice(0, -1))
     const config = {
         // expires: expiry,
-        sameSite: 'none',
+        // sameSite: 'none',
         secure: true
     }
     return { session, config }

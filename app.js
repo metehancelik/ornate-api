@@ -22,9 +22,9 @@ if (process.env.NODE_ENV === "development") {
 }
 
 const corsOptions = {
-    origin: 'https://ornateadmin.com',
+    origin: true,
     credentials: true,
-    optionSuccessStatus: 200
+    // optionSuccessStatus: 200
 }
 app.use(cors(corsOptions));
 
