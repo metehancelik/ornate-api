@@ -21,7 +21,12 @@ if (process.env.NODE_ENV === "development") {
     app.use(morgan("dev"))
 }
 
-app.use(cors());
+
+
+app.use(cors({
+    credentials: true,
+    origin: 'https://ornateadmin.com'
+}));
 
 
 // setting security HTTP headers
