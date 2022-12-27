@@ -76,7 +76,7 @@ const createSession = async (req, user) => {
         expires: expiry,
         httpOnly: true,
         secure: true,
-        sameSite: process.env.NODE_ENV === "development" ? "Lax" : "Strict"
+        // sameSite: process.env.NODE_ENV === "development" ? "Lax" : "Strict"
     }
     return { session, config }
 }
