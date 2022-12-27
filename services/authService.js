@@ -73,10 +73,9 @@ const createSession = async (req, user) => {
     // create a cookie expiry date in compatible w jwt lifetime
     const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000 * +process.env.JWT_SESSION_EXPIRY.slice(0, -1))
     const config = {
-        expires: expiry,
-        httpOnly: true,
-        secure: true,
-        // sameSite: process.env.NODE_ENV === "development" ? "Lax" : "Strict"
+        // expires: expiry,
+        sameSite: 'none',
+        secure: true
     }
     return { session, config }
 }
