@@ -75,7 +75,8 @@ const createSession = async (req, user) => {
     const config = {
         expires: expiry,
         sameSite: 'Lax',
-        secure: true
+        secure: true,
+        httpOnly: true
     }
     return { session, config }
 }
