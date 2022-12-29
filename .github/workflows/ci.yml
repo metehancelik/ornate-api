@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.ref == 'refs/heads/main' # we tell Github to only execute this step if we're on our development branch (so we don't put unfinished branches in production)
     steps:
-      - name: Deploying the Hello World Project
+      - name: Deploying project
         uses: appleboy/ssh-action@master # An action made to control Linux servers
         with: # We set all our secrets here for the action, these won't be shown in the action logs
           host: ${{ secrets.HOST }}
