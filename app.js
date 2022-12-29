@@ -52,7 +52,7 @@ app.use(`/api/${process.env.API_VERSION}`, api)
 
 // returning the main index.html, so react-router render the route in the client
 app.get("*", (req, res) => {
-    res.send('No route entered')
+    res.send('404 not found')
 })
 
 // setting up a 404 error handler
