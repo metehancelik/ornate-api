@@ -6,16 +6,17 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
-      - name: Install dependencies
-        run: npm install
-      - name: Deploy
-        run: |
-          npm install -g pm2
-          pm2 start --name api index.js
+      uses: appleboy/ssh-action@master # An action made to control Linux servers
+        with: # We set all our secrets here for the action, these won't be shown in the action logs
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /var/www/${{ secrets.PATH }} # we move into our app's folder
+            bash ${{ secrets.BASH_PATH }}
+            npm prune # we remove any unused dependencies
+            npm install # we install any missing dependencies
+            pm2 reload all # we reload the app via PM2
         env:
           CI: true
