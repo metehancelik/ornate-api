@@ -16,6 +16,6 @@ jobs:
       - name: Deploy
         run: |
           npm install -g pm2
-          pm2 reload all
+          pm2 start --name api index.js
         env:
           CI: true
