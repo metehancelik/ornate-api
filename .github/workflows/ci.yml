@@ -6,18 +6,18 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
-    - name: Deploy API
-      uses: appleboy/ssh-action@master # An action made to control Linux servers
-        with: # We set all our secrets here for the action, these won't be shown in the action logs
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          port: ${{ secrets.PORT }}
-          script: |
-            cd /var/www/${{ secrets.PATH }} # we move into our app's folder
-            bash ${{ secrets.BASH_PATH }}
-            npm prune # we remove any unused dependencies
-            npm install # we install any missing dependencies
-            pm2 reload all # we reload the app via PM2
+      - name: Deploy API
+        uses: appleboy/ssh-action@master # An action made to control Linux servers
+          with: # We set all our secrets here for the action, these won't be shown in the action logs
+            host: ${{ secrets.HOST }}
+            username: ${{ secrets.USERNAME }}
+            password: ${{ secrets.PASSWORD }}
+            port: ${{ secrets.PORT }}
+            script: |
+              cd /var/www/${{ secrets.PATH }} # we move into our app's folder
+              bash ${{ secrets.BASH_PATH }}
+              npm prune # we remove any unused dependencies
+              npm install # we install any missing dependencies
+              pm2 reload all # we reload the app via PM2
         env:
           CI: true
