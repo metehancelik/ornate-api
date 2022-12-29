@@ -6,6 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
+    - name: Deploy API
       uses: appleboy/ssh-action@master # An action made to control Linux servers
         with: # We set all our secrets here for the action, these won't be shown in the action logs
           host: ${{ secrets.HOST }}
