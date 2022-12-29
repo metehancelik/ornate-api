@@ -27,7 +27,6 @@ exports.getAllCalls = catchAsync(async (req, res, next) => {
 
 //GET CALLS BY USER ID
 exports.getCallsByUserId = catchAsync(async (req, res, next) => {
-  console.log(req.params);
   let calls = await Call.find({ userId: req.params.userId });
   calls = JSON.parse(JSON.stringify(calls)).reverse();
 
