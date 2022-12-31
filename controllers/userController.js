@@ -4,13 +4,68 @@ const AppError = require('./../utils/appError');
 const catchAsync = require('./../utils/catchAsync');
 const User = require('../schemas/user');
 
-exports.getMe = catchAsync(async (req, res, next) => {
-  const user = await User.findByPk(req.userId, {
-    attributes: ['id', 'firstName', 'lastName', 'email', 'profileImg'],
-  });
-  res.status(200).send({ status: 'success', data: user });
+// Get All Users
+exports.getAllUsers = catchAsync(async (req, res) => {
+  let queryParam = req.query.q;
+  let page = req.query.page || 1;
+  let limit = 10;
+  let query =
+    queryParam == undefined
+      ? {}
+      : {
+          $or: [
+            {
+              offerupNick: {
+                $regex: '.*' + queryParam + '.*',
+                $options: 'i',
+              },
+            },
+            {
+              firstName: {
+                $regex: '.*' + queryParam + '.*',
+                $options: 'i',
+              },
+            },
+            {
+              lastName: {
+                $regex: '.*' + queryParam + '.*',
+                $options: 'i',
+              },
+            },
+          ],
+        };
+
+  let count = await User.countDocuments(query);
+
+  let data = await User.find(query)
+    .sort({ createdAt: -1 })
+    .skip(limit * (page - 1))
+    .limit(limit);
+
+  res.status(200).send({ status: 'success', count, data });
 });
 
+// Get User By ID
+exports.getUserById = catchAsync(async (req, res) => {
+  const data = await User.findById(req.params.id);
+
+  res.status(200).send({ status: 'success', data });
+});
+
+// Get Me
+exports.getMe = catchAsync(async (req, res) => {
+  const data = await User.findById(req.userId).select({
+    password: 0,
+    _id: 0,
+    role: 0,
+    createdAt: 0,
+    updatedAt: 0,
+    __v: 0,
+  });
+  res.status(200).send({ status: 'success', data });
+});
+
+// TODO update user
 exports.updateUserProfile = catchAsync(async (req, res, next) => {
   const { firstName, lastName } = req.body;
   // find image to delete if it is to be updated
@@ -94,51 +149,4 @@ exports.updateUserPassword = catchAsync(async (req, res, next) => {
     data: 'Password updated successfully!',
   });
 });
-
 // TODO update user
-
-exports.getAllUsers = catchAsync(async (req, res, next) => {
-  let queryParam = req.query.q;
-  let page = req.query.page || 1;
-  let limit = 10;
-  let query =
-    queryParam === undefined
-      ? {}
-      : {
-          $or: [
-            {
-              offerupNick: {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
-            },
-            {
-              firstName: {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
-            },
-            {
-              lastName: {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
-            },
-          ],
-        };
-
-  let data = await User.find(query)
-    .sort({ createdAt: -1 })
-    .skip(limit * (page - 1))
-    .limit(limit);
-
-  let count = await User.countDocuments(query);
-
-  res.status(200).send({ status: 'success', count, data });
-});
-
-exports.getUserById = catchAsync(async (req, res, next) => {
-  const data = await User.findById(req.params.id);
-
-  res.status(200).send({ status: 'success', data });
-});

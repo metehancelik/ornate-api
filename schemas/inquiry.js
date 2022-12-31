@@ -1,10 +1,12 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const InquirySchema = mongoose.Schema(
   {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+    user: {
+      offerupNick: String,
+      firstName: String,
+      lastName: String,
+      userId: String,
     },
     customerName: {
       type: String,
@@ -19,19 +21,20 @@ const InquirySchema = mongoose.Schema(
     },
     to: {
       type: String,
-      enum: ["showroom", "web"],
-      default: "web",
+      enum: ['showroom', 'web'],
+      default: 'web',
     },
+
     region: {
       type: String,
       enum: [
-        "santa ana",
-        "san bernardino",
-        "san diego",
-        "los angeles",
-        "outer areas",
+        'santa ana',
+        'san bernardino',
+        'san diego',
+        'los angeles',
+        'outer areas',
       ],
-      default: "santa ana",
+      default: 'santa ana',
       required: true,
     },
   },
@@ -40,4 +43,4 @@ const InquirySchema = mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Inquiry", InquirySchema);
+module.exports = mongoose.model('Inquiry', InquirySchema);

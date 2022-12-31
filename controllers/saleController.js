@@ -1,145 +1,160 @@
-const catchAsync = require("../utils/catchAsync");
-const Sale = require("../schemas/sale");
+const catchAsync = require('../utils/catchAsync');
+const Sale = require('../schemas/sale');
+const User = require('../schemas/user');
 
-const pdf = require('html-pdf');
-const pdfTemplate = require('../utils/pdfTemplate');
-
-
-//GET ALL SALES
-exports.getAllSales = catchAsync(async (req, res, next) => {
-  let data = await Sale.find().populate({
-    path: "userId",
-    select: "firstName lastName offerupNick commissionRate",
-  });
-
-  data = JSON.parse(JSON.stringify(data));
-
-  for (let d of data) {
-    d.customerName = d.customerName;
-    d.productName = d.productName;
-    d.to = d.to;
-    d.notes = d.notes;
-    d.firstName = d.userId.firstName;
-    d.lastName = d.userId.lastName;
-    d.offerupNick = d.userId.offerupNick;
-    d.commission = d.userId.commissionRate * d.price / 100
-    delete d.userId;
-    delete d.__v;
-  }
-
-  data = data.reverse()
-  res.status(200).send({ status: "success", results: data.length, data });
-});
-
-//GET ALL SALES WITHOUT COMMISSIONS
-exports.getUISales = catchAsync(async (req, res, next) => {
-  let data = await Sale.find().populate({
-    path: "userId",
-    select: "firstName lastName offerupNick",
-  });
-
-  data = JSON.parse(JSON.stringify(data));
-
-  for (let d of data) {
-    d.customerName = d.customerName;
-    d.productName = d.productName;
-    d.to = d.to;
-    d.notes = d.notes;
-    d.firstName = d.userId.firstName;
-    d.lastName = d.userId.lastName;
-    d.offerupNick = d.userId.offerupNick;
-    delete d.userId;
-    delete d.__v;
-  }
-
-  data = data.reverse()
-  res.status(200).send({ status: "success", results: data.length, data });
-});
-
-
-
-//GET SALES BY USER ID
-exports.getSalesByUserId = catchAsync(async (req, res, next) => {
-  let sales = await Sale.find({ userId: req.params.userId });
-  sales = JSON.parse(JSON.stringify(sales)).reverse();
-
-
-  // Buralar okey
-  for (let d of sales) {
-    d.customerName = d.customerName;
-    d.productName = d.productName;
-    d.firstName = d.userId.firstName;
-    d.lastName = d.userId.lastName;
-    d.commission = d.userId.commissionRate * d.price / 100
-    delete d.userId;
-    delete d.__v;
-  }
-  //
-
-  return res.status(200).send({ status: "success", data: sales });
-});
-
-
-//GET SALE BY ID
-exports.getSaleById = catchAsync(async (req, res) => {
-  let d = await Sale.findById(req.params.saleId).populate({
-    path: "userId",
-    select: "firstName lastName commissionRate",
-  });
-
-  d = JSON.parse(JSON.stringify(d));
-
-  d.customerName = d.customerName;
-  d.productName = d.productName;
-  d.firstName = d.userId.firstName;
-  d.lastName = d.userId.lastName;
-  d.commission = d.userId.commissionRate * d.price / 100
-  d.userId = undefined;
-  d.__v = undefined;
-
-  return res.status(200).send({ status: "success", data: d });
-});
-
-//GET ALL SALES' TOTAL PRICE
-exports.getTotalPrice = catchAsync(async (req, res) => {
-  let data = await Sale.find().select('price')
-  totalPrice = data.map(item => item.price).reduce((a, b) => a + b)
-
-  return res.status(200).send({ status: "success", data: totalPrice })
-})
-
-//CREATE SALE
+// Create Sale
 exports.createSale = catchAsync(async (req, res) => {
   const { customerName, productName, price, isShared, userId, date } = req.body;
+  const { firstName, lastName, offerupNick, commissionRate, _id } =
+    await User.findById(userId).select({
+      firstName: 1,
+      lastName: 1,
+      offerupNick: 1,
+      commissionRate: 1,
+    });
 
-  const sale = await Sale.create({
+  const data = await Sale.create({
     customerName,
     productName,
     price,
+    commission: (commissionRate * price) / 100,
     isShared,
-    userId,
-    date
+    user: {
+      offerupNick,
+      firstName,
+      lastName,
+      userId: _id.toString(),
+    },
+    date,
   });
 
-  res.status(201).send({ status: "success", data: sale });
+  res.status(201).send({ status: 'success', data });
 });
 
-//UPDATE SALE
-exports.updateSaleById = catchAsync(async (req, res, next) => {
+// Get All Sales
+exports.getAllSales = catchAsync(async (req, res) => {
+  let queryParam = req.query.q;
+  let page = req.query.page || 1;
+  let limit = 10;
 
-  const saleId = req.params.saleId
-  const sale = await Sale.findOneAndUpdate(
+  let query =
+    queryParam === undefined
+      ? {}
+      : {
+          $or: [
+            {
+              'user.offerupNick': {
+                $regex: '.*' + queryParam + '.*',
+                $options: 'i',
+              },
+            },
+            {
+              customerName: {
+                $regex: '.*' + queryParam + '.*',
+                $options: 'i',
+              },
+            },
+            {
+              productName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
+            },
+          ],
+        };
+
+  let count = await Sale.countDocuments(query);
+
+  let data = await Sale.find(query)
+    .sort({ createdAt: -1 })
+    .skip(limit * (page - 1))
+    .limit(limit);
+
+  res.status(200).send({ status: 'success', count, data });
+});
+
+// Get All Sales Without Commission
+exports.getUISales = catchAsync(async (req, res) => {
+  let queryParam = req.query.q;
+  let page = req.query.page || 1;
+  let limit = 10;
+
+  let query =
+    queryParam === undefined
+      ? {}
+      : {
+          $or: [
+            {
+              'user.offerupNick': {
+                $regex: '.*' + queryParam + '.*',
+                $options: 'i',
+              },
+            },
+            {
+              customerName: {
+                $regex: '.*' + queryParam + '.*',
+                $options: 'i',
+              },
+            },
+            {
+              productName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
+            },
+          ],
+        };
+
+  let count = await Sale.countDocuments(query);
+
+  let data = await Sale.find(query)
+    .sort({ createdAt: -1 })
+    .skip(limit * (page - 1))
+    .limit(limit)
+    .select({
+      commission: 0,
+    });
+
+  for (let d of data) {
+    delete d.commission;
+    delete d.userId;
+    delete d.__v;
+  }
+
+  res.status(200).send({ status: 'success', count, data });
+});
+
+// Get Sales By User ID
+exports.getSalesByUserId = catchAsync(async (req, res) => {
+  let data = await Sale.find({ 'user.userId': req.params.userId });
+
+  return res.status(200).send({ status: 'success', data });
+});
+
+// Get Sale By ID
+exports.getSaleById = catchAsync(async (req, res) => {
+  let data = await Sale.findById(req.params.saleId);
+
+  return res.status(201).send({ status: 'success', data });
+});
+
+// Get All Sales' Total Price
+exports.getTotalPrice = catchAsync(async (req, res) => {
+  let data = await Sale.find().select('price');
+  data = data.map((item) => item.price).reduce((a, b) => a + b);
+
+  return res.status(200).send({ status: 'success', data });
+});
+
+// Update Sale
+exports.updateSaleById = catchAsync(async (req, res) => {
+  const saleId = req.params.saleId;
+  const data = await Sale.findOneAndUpdate(
     { _id: saleId },
     { ...req.body },
     { upsert: true }
-  )
+  );
 
-  res.status(204).send({ status: "success", data: sale });
+  res.status(204).send({ status: 'success', data });
 });
 
-//DELETE SALE
-exports.deleteSaleById = catchAsync(async (req, res, next) => {
+// Delete Sale
+exports.deleteSaleById = catchAsync(async (req, res) => {
   await Sale.findByIdAndDelete({ _id: req.params.saleId });
 
-  return res.status(204).send({ status: "success" });
+  return res.status(204).send({ status: 'success' });
 });

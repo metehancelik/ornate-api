@@ -1,70 +1,135 @@
-const catchAsync = require("../utils/catchAsync");
-const Call = require("../schemas/call");
+const catchAsync = require('../utils/catchAsync');
+const Call = require('../schemas/call');
+const User = require('../schemas/user');
 
-//GET ALL CALLS
-exports.getAllCalls = catchAsync(async (req, res, next) => {
-  let data = await Call.find().populate({
-    path: "userId",
-    select: "firstName lastName offerupNick",
-  });
-
-  data = JSON.parse(JSON.stringify(data));
-
-  for (let d of data) {
-    d.customerName = d.customerName;
-    d.productName = d.productName;
-    d.to = d.to;
-    d.notes = d.notes;
-    d.firstName = d.userId.firstName;
-    d.lastName = d.userId.lastName;
-    d.offerupNick = d.userId.offerupNick;
-    delete d.userId;
-    delete d.__v;
-  }
-  data = data.reverse()
-  res.status(200).send({ status: "success", results: data.length, data });
-});
-
-//GET CALLS BY USER ID
-exports.getCallsByUserId = catchAsync(async (req, res, next) => {
-  let calls = await Call.find({ userId: req.params.userId });
-  calls = JSON.parse(JSON.stringify(calls)).reverse();
-
-  return res.status(200).send({ status: "success", data: calls });
-});
-
-//CREATE CALL
+// Create Call
 exports.createCall = catchAsync(async (req, res) => {
   const { customerName, salesmanNote, callerNote, phone, isCalled, userId } =
     req.body;
 
-  const call = await Call.create({
+  const { firstName, lastName, offerupNick, _id } = await User.findById(
+    userId
+  ).select({
+    firstName: 1,
+    lastName: 1,
+    offerupNick: 1,
+  });
+
+  const data = await Call.create({
     customerName,
     salesmanNote,
     callerNote,
     phone,
     isCalled,
-    userId,
+    user: {
+      offerupNick,
+      firstName,
+      lastName,
+      userId: _id.toString(),
+    },
   });
 
-  res.status(201).send({ status: "success", data: call });
+  res.status(201).send({ status: 'success', data });
 });
 
-//UPDATE CALL
-exports.updateCallById = catchAsync(async (req, res, next) => {
-  const callId = req.params.callId;
-  const call = await Call.findOneAndUpdate(
-    { _id: callId },
+// Get All Calls
+exports.getAllCalls = catchAsync(async (req, res, next) => {
+  let queryParam = req.query.q;
+  let page = req.query.page || 1;
+  let limit = 10;
+  let query =
+    queryParam === undefined
+      ? {}
+      : {
+          $or: [
+            {
+              'user.offerupNick': {
+                $regex: '.*' + queryParam + '.*',
+                $options: 'i',
+              },
+            },
+            {
+              customerName: {
+                $regex: '.*' + queryParam + '.*',
+                $options: 'i',
+              },
+            },
+          ],
+        };
+  if (req.query.isCalled) {
+    let isCall = req.query.isCalled === 'true' ? true : false;
+    query = { ...query, isCalled: isCall };
+  }
+
+  let count = await Call.countDocuments(query);
+  let data = await Call.find(query)
+    .sort({ createdAt: -1 })
+    .skip(limit * (page - 1))
+    .limit(limit);
+
+  res.status(200).send({ status: 'success', count, data });
+});
+
+// Get Calls By User ID
+exports.getCallsByUserId = catchAsync(async (req, res) => {
+  let queryParam = req.query.q;
+  let page = req.query.page || 1;
+  let limit = 10;
+  let query =
+    queryParam === undefined
+      ? {}
+      : {
+          $or: [
+            {
+              'user.offerupNick': {
+                $regex: '.*' + queryParam + '.*',
+                $options: 'i',
+              },
+            },
+            {
+              customerName: {
+                $regex: '.*' + queryParam + '.*',
+                $options: 'i',
+              },
+            },
+          ],
+        };
+  if (req.query.isCalled) {
+    let isCall = req.query.isCalled === 'true' ? true : false;
+    query = { ...query, isCalled: isCall };
+  }
+  query = { ...query, 'user.userId': req.userId };
+
+  let count = await Call.countDocuments(query);
+  let data = await Call.find(query)
+    .sort({ createdAt: -1 })
+    .skip(limit * (page - 1))
+    .limit(limit);
+
+  return res.status(200).send({ status: 'success', count, data });
+});
+
+// Get Call By ID
+exports.getCallById = catchAsync(async (req, res) => {
+  let data = await Call.findById(req.params.id);
+
+  return res.status(201).send({ status: 'success', data });
+});
+
+// Update Call
+exports.updateCallById = catchAsync(async (req, res) => {
+  let data = await Call.findOneAndUpdate(
+    { _id: req.params.callId },
     { ...req.body },
-    { upsert: true }
+    { new: true, upsert: true }
   );
 
-  res.status(204).send({ status: "success", data: call });
+  res.status(204).send({ status: 'success', data });
 });
 
-exports.getCallById = catchAsync(async (req, res, next) => {
-  let call = await Call.findOne({ _id: req.params.id });
-  call = JSON.parse(JSON.stringify(call));
+// Delete Inquiry
+exports.deleteCallById = catchAsync(async (req, res) => {
+  await Call.findByIdAndDelete({ _id: req.params.callId });
 
-  return res.status(201).send({ status: "success", data: call });
+  return res.status(204).send({ status: 'success' });
 });

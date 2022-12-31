@@ -1,45 +1,34 @@
-const catchAsync = require("../utils/catchAsync");
-const Sale = require("../schemas/sale");
-const User = require("../schemas/user");
+const catchAsync = require('../utils/catchAsync');
+const Sale = require('../schemas/sale');
 
-//GET ALL SALES
-exports.getAllSales = catchAsync(async (req, res, next) => {
-  let data = await Sale.find().populate({
-    path: "userId",
-    select: "firstName lastName offerupNick commissionRate",
-  });
-
-  data = JSON.parse(JSON.stringify(data));
-
-  for (let d of data) {
-    d.customerName = d.customerName;
-    d.productName = d.productName;
-    d.to = d.to;
-    d.notes = d.notes;
-    d.firstName = d.userId.firstName;
-    d.lastName = d.userId.lastName;
-    d.offerupNick = d.userId.offerupNick;
-    d.commission = d.userId.commissionRate * d.price / 100
-    delete d.userId;
-    delete d.__v;
-  }
-
-  data = data.reverse()
-  res.status(200).send({ status: "success", results: data.length, data });
-});
-
+// Get All Commissions
 exports.getAllCommissions = catchAsync(async (req, res) => {
-
-  const sales = await Sale.find({ createdAt: { $gte: req.body.gte, $lt: req.body.lt } }).populate({
-    path: "userId",
-    select: "firstName lastName offerupNick commissionRate",
+  const { page = 1 } = req.query;
+  const limit = 10;
+  const sales = await Sale.find({
+    createdAt: { $gte: req.body.dateGte, $lt: req.body.dateLt },
+  }).select({
+    price: 1,
+    commission: 1,
+    'user.firstName': 1,
+    'user.lastName': 1,
+    'user.offerupNick': 1,
   });
 
-  let data = sales.map(sale => sale.offerupNick = { commission: sale.price * sale.userId.commissionRate / 100, firstName: sale.userId.firstName, lastName: sale.userId.lastName, revenue: sale.price, offerupNick: sale.userId.offerupNick })
+  let data = sales.map(
+    (sale) =>
+      (sale.offerupNick = {
+        commission: sale.commission,
+        firstName: sale.user.firstName,
+        lastName: sale.user.lastName,
+        revenue: sale.price,
+        offerupNick: sale.user.offerupNick,
+      })
+  );
 
-  const aggregateArray = arr => {
+  const aggregateArray = (arr) => {
     return arr.reduce((acc, val) => {
-      const index = acc.findIndex(obj => obj.offerupNick === val.offerupNick);
+      const index = acc.findIndex((obj) => obj.offerupNick === val.offerupNick);
       if (index !== -1) {
         acc[index].revenue += val.revenue;
         acc[index].commission += val.commission;
@@ -51,11 +40,11 @@ exports.getAllCommissions = catchAsync(async (req, res) => {
           firstName: val.firstName,
           lastName: val.lastName,
         });
-      };
+      }
       return acc;
     }, []);
   };
-  data = aggregateArray(data)
+  data = aggregateArray(data).slice(page - 1 * limit, page * limit);
 
-  res.status(200).send({ status: "success", data, length: sales.length });
+  res.status(200).send({ status: 'success', data, count: data.length });
 });
