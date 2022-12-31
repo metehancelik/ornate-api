@@ -1,14 +1,14 @@
-const fs = require("fs");
-const bcrypt = require("bcryptjs");
-const AppError = require("./../utils/appError");
-const catchAsync = require("./../utils/catchAsync");
-const User = require("../schemas/user");
+const fs = require('fs');
+const bcrypt = require('bcryptjs');
+const AppError = require('./../utils/appError');
+const catchAsync = require('./../utils/catchAsync');
+const User = require('../schemas/user');
 
 exports.getMe = catchAsync(async (req, res, next) => {
   const user = await User.findByPk(req.userId, {
-    attributes: ["id", "firstName", "lastName", "email", "profileImg"],
+    attributes: ['id', 'firstName', 'lastName', 'email', 'profileImg'],
   });
-  res.status(200).send({ status: "success", data: user });
+  res.status(200).send({ status: 'success', data: user });
 });
 
 exports.updateUserProfile = catchAsync(async (req, res, next) => {
@@ -16,8 +16,8 @@ exports.updateUserProfile = catchAsync(async (req, res, next) => {
   // find image to delete if it is to be updated
   if (req.file) {
     // create new image path
-    const hostUrl = req.protocol + "://" + req.get("host");
-    const profileImg = hostUrl + "/" + req.file.filename;
+    const hostUrl = req.protocol + '://' + req.get('host');
+    const profileImg = hostUrl + '/' + req.file.filename;
     const oldUser = await User.findByPk(req.userId);
     if (oldUser.profileImg) {
       // delete old image
@@ -39,11 +39,11 @@ exports.updateUserProfile = catchAsync(async (req, res, next) => {
       },
       {
         where: { id: req.userId },
-        returning: ["id", "first_name", "last_name", "profile_img", "email"],
+        returning: ['id', 'first_name', 'last_name', 'profile_img', 'email'],
         plain: true,
       }
     );
-    return res.status(200).send({ status: "success", data: user[1] });
+    return res.status(200).send({ status: 'success', data: user[1] });
   }
   const user = await User.update(
     {
@@ -52,31 +52,31 @@ exports.updateUserProfile = catchAsync(async (req, res, next) => {
     },
     {
       where: { id: req.userId },
-      returning: ["id", "first_name", "last_name", "profile_img", "email"],
+      returning: ['id', 'first_name', 'last_name', 'profile_img', 'email'],
       plain: true,
     }
   );
 
-  res.status(200).send({ status: "success", data: user[1] });
+  res.status(200).send({ status: 'success', data: user[1] });
 });
 
 exports.updateUserPassword = catchAsync(async (req, res, next) => {
   const { oldPassword, password, passwordConfirm } = req.body;
   // check if old password exists and is correct
   if (!oldPassword) {
-    return next(new AppError(400, "Current password must be provided!"));
+    return next(new AppError(400, 'Current password must be provided!'));
   }
   const user = await User.findOne({
     where: { id: req.userId },
-    attributes: ["password"],
+    attributes: ['password'],
   });
   var passwordIsValid = bcrypt.compareSync(oldPassword, user.password);
   if (!passwordIsValid) {
-    return next(new AppError(400, "Current password is incorrect!"));
+    return next(new AppError(400, 'Current password is incorrect!'));
   }
   // check if password and passwordConfirm match
   if (password !== passwordConfirm) {
-    return next(new AppError(400, "Passwords do not match!"));
+    return next(new AppError(400, 'Passwords do not match!'));
   }
   // update password
   await User.update(
@@ -90,12 +90,34 @@ exports.updateUserPassword = catchAsync(async (req, res, next) => {
   );
   // send success message to client
   res.status(200).send({
-    status: "success",
-    data: "Password updated successfully!",
+    status: 'success',
+    data: 'Password updated successfully!',
   });
 });
 exports.getAllUsers = catchAsync(async (req, res, next) => {
-  const users = await User.find();
+  let page = req.query.page || 1;
+  let limit = 10;
+  let query =
+    req.query.q === undefined
+      ? {}
+      : {
+          $or: [
+            { offerupNick: { $regex: '.*' + req.query.q + '.*' } },
+            { firstName: { $regex: '.*' + req.query.q + '.*' } },
+            { lastName: { $regex: '.*' + req.query.q + '.*' } },
+          ],
+        };
 
-  res.status(200).send({ status: "success", data: users });
+  let data = await User.find(query)
+    .sort({ createdAt: -1 })
+    .skip(limit * (page - 1))
+    .limit(limit);
+
+  res.status(200).send({ status: 'success', data });
+});
+
+exports.getUserById = catchAsync(async (req, res, next) => {
+  const data = await User.findById(req.params.id);
+
+  res.status(200).send({ status: 'success', data });
 });

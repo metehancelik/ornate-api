@@ -5,7 +5,15 @@ const { sign, verify } = require('../utils/jwt');
 const { encrypt, decrypt } = require('../utils/session');
 
 exports.registerUser = async (userInput) => {
-  const { firstName, lastName, offerupNick, password, role } = userInput;
+  const {
+    firstName,
+    lastName,
+    offerupNick,
+    password,
+    role,
+    commissionRate,
+    billingInfo,
+  } = userInput;
   // create the user
   const newUser = await User.create({
     firstName,
@@ -13,6 +21,8 @@ exports.registerUser = async (userInput) => {
     offerupNick,
     password,
     role,
+    commissionRate,
+    billingInfo,
   });
   return {
     offerupNick: newUser.offerupNick,
