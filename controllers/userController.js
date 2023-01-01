@@ -1,4 +1,3 @@
-const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const AppError = require('./../utils/appError');
 const catchAsync = require('./../utils/catchAsync');
@@ -13,27 +12,27 @@ exports.getAllUsers = catchAsync(async (req, res) => {
     queryParam == undefined
       ? {}
       : {
-          $or: [
-            {
-              offerupNick: {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+        $or: [
+          {
+            offerupNick: {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-            {
-              firstName: {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+          },
+          {
+            firstName: {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-            {
-              lastName: {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+          },
+          {
+            lastName: {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-          ],
-        };
+          },
+        ],
+      };
 
   let count = await User.countDocuments(query);
 
@@ -47,7 +46,7 @@ exports.getAllUsers = catchAsync(async (req, res) => {
 
 // Get User By ID
 exports.getUserById = catchAsync(async (req, res) => {
-  const data = await User.findById(req.params.id);
+  const data = await User.findById(req.params.userId);
 
   res.status(200).send({ status: 'success', data });
 });
@@ -65,66 +64,38 @@ exports.getMe = catchAsync(async (req, res) => {
   res.status(200).send({ status: 'success', data });
 });
 
-// TODO update user
-exports.updateUserProfile = catchAsync(async (req, res, next) => {
-  const { firstName, lastName } = req.body;
-  // find image to delete if it is to be updated
-  if (req.file) {
-    // create new image path
-    const hostUrl = req.protocol + '://' + req.get('host');
-    const profileImg = hostUrl + '/' + req.file.filename;
-    const oldUser = await User.findByPk(req.userId);
-    if (oldUser.profileImg) {
-      // delete old image
-      const oldImagePath = `./${
-        process.env.IMAGES_DIR
-      }/${oldUser.profileImg.slice(hostUrl.length + 1)}`;
-      // delete image and send response
-      fs.unlink(oldImagePath, (err) => {
-        if (err) {
-          return next(new AppError(500, err.message));
-        }
-      });
-    }
-    const user = await User.update(
-      {
-        firstName,
-        lastName,
-        profileImg,
-      },
-      {
-        where: { id: req.userId },
-        returning: ['id', 'first_name', 'last_name', 'profile_img', 'email'],
-        plain: true,
-      }
-    );
-    return res.status(200).send({ status: 'success', data: user[1] });
-  }
-  const user = await User.update(
-    {
-      firstName,
-      lastName,
-    },
-    {
-      where: { id: req.userId },
-      returning: ['id', 'first_name', 'last_name', 'profile_img', 'email'],
-      plain: true,
-    }
+// Update User Info
+exports.updateUserProfile = catchAsync(async (req, res) => {
+  const data = await User.findOneAndUpdate(
+    { _id: req.params.userId },
+    { ...req.body },
+    { upsert: true }
   );
 
-  res.status(200).send({ status: 'success', data: user[1] });
+  res.status(204).send({ status: 'success' });
 });
 
-exports.updateUserPassword = catchAsync(async (req, res, next) => {
+// Update My Profile
+exports.updateMyProfile = catchAsync(async (req, res) => {
+  const { offerupNick, firstName, lastName, billingInfo } = req.body
+  await User.findOneAndUpdate(
+    { _id: req.userId },
+    { offerupNick, firstName, lastName, billingInfo }
+  );
+
+  res.status(204).send({ status: 'success' });
+});
+
+// Update User Password
+exports.updateMyPassword = catchAsync(async (req, res, next) => {
   const { oldPassword, password, passwordConfirm } = req.body;
+
   // check if old password exists and is correct
   if (!oldPassword) {
     return next(new AppError(400, 'Current password must be provided!'));
   }
-  const user = await User.findOne({
-    where: { id: req.userId },
-    attributes: ['password'],
-  });
+  const user = await User.findById(req.userId).select({ password: 1 });
+
   var passwordIsValid = bcrypt.compareSync(oldPassword, user.password);
   if (!passwordIsValid) {
     return next(new AppError(400, 'Current password is incorrect!'));
@@ -134,14 +105,13 @@ exports.updateUserPassword = catchAsync(async (req, res, next) => {
     return next(new AppError(400, 'Passwords do not match!'));
   }
   // update password
-  await User.update(
+  await User.findOneAndUpdate({ _id: req.userId },
     {
       password: bcrypt.hashSync(
         password,
         Number(process.env.PASSWORD_HASH_CYCLE)
       ),
-    },
-    { where: { id: req.userId } }
+    }
   );
   // send success message to client
   res.status(200).send({
@@ -149,4 +119,3 @@ exports.updateUserPassword = catchAsync(async (req, res, next) => {
     data: 'Password updated successfully!',
   });
 });
-// TODO update user

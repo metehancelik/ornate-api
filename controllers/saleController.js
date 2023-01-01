@@ -41,24 +41,24 @@ exports.getAllSales = catchAsync(async (req, res) => {
     queryParam === undefined
       ? {}
       : {
-          $or: [
-            {
-              'user.offerupNick': {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+        $or: [
+          {
+            'user.offerupNick': {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-            {
-              customerName: {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+          },
+          {
+            customerName: {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-            {
-              productName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
-            },
-          ],
-        };
+          },
+          {
+            productName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
+          },
+        ],
+      };
 
   let count = await Sale.countDocuments(query);
 
@@ -80,24 +80,24 @@ exports.getUISales = catchAsync(async (req, res) => {
     queryParam === undefined
       ? {}
       : {
-          $or: [
-            {
-              'user.offerupNick': {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+        $or: [
+          {
+            'user.offerupNick': {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-            {
-              customerName: {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+          },
+          {
+            customerName: {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-            {
-              productName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
-            },
-          ],
-        };
+          },
+          {
+            productName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
+          },
+        ],
+      };
 
   let count = await Sale.countDocuments(query);
 
@@ -142,14 +142,13 @@ exports.getTotalPrice = catchAsync(async (req, res) => {
 
 // Update Sale
 exports.updateSaleById = catchAsync(async (req, res) => {
-  const saleId = req.params.saleId;
   const data = await Sale.findOneAndUpdate(
-    { _id: saleId },
+    { _id: req.params.saleId },
     { ...req.body },
     { upsert: true }
   );
 
-  res.status(204).send({ status: 'success', data });
+  res.status(204).send({ status: 'success' });
 });
 
 // Delete Sale

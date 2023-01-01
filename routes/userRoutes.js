@@ -4,8 +4,9 @@ const userController = require('./../controllers/userController');
 router
   .get('/', userController.getMe)
   .get('/all', userController.getAllUsers)
-  .get('/:id', userController.getUserById)
-  .post('/', userController.updateUserProfile)
-  .patch('/', userController.updateUserPassword);
+  .get('/:userId', userController.getUserById)
+  .put('/:userId', userController.updateUserProfile)
+  .put('/', userController.updateMyProfile)
+  .patch('/', userController.updateMyPassword);
 
 module.exports = router;
