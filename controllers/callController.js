@@ -36,26 +36,26 @@ exports.createCall = catchAsync(async (req, res) => {
 exports.getAllCalls = catchAsync(async (req, res, next) => {
   let queryParam = req.query.q;
   let page = req.query.page || 1;
-  let limit = 10;
+  let limit = 30;
   let query =
     queryParam === undefined
       ? {}
       : {
-          $or: [
-            {
-              'user.offerupNick': {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+        $or: [
+          {
+            'user.offerupNick': {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-            {
-              customerName: {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+          },
+          {
+            customerName: {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-          ],
-        };
+          },
+        ],
+      };
   if (req.query.isCalled) {
     let isCall = req.query.isCalled === 'true' ? true : false;
     query = { ...query, isCalled: isCall };
@@ -74,26 +74,26 @@ exports.getAllCalls = catchAsync(async (req, res, next) => {
 exports.getCallsByUserId = catchAsync(async (req, res) => {
   let queryParam = req.query.q;
   let page = req.query.page || 1;
-  let limit = 10;
+  let limit = 30;
   let query =
     queryParam === undefined
       ? {}
       : {
-          $or: [
-            {
-              'user.offerupNick': {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+        $or: [
+          {
+            'user.offerupNick': {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-            {
-              customerName: {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+          },
+          {
+            customerName: {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-          ],
-        };
+          },
+        ],
+      };
   if (req.query.isCalled) {
     let isCall = req.query.isCalled === 'true' ? true : false;
     query = { ...query, isCalled: isCall };

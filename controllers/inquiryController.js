@@ -35,26 +35,26 @@ exports.createInquiry = catchAsync(async (req, res) => {
 exports.getAllInquiries = catchAsync(async (req, res) => {
   let queryParam = req.query.q;
   let page = req.query.page || 1;
-  let limit = 10;
+  let limit = 30;
   let query =
     queryParam === undefined
       ? {}
       : {
-          $or: [
-            {
-              'user.offerupNick': {
-                $regex: '.*' + queryParam + '.*',
-                $options: 'i',
-              },
+        $or: [
+          {
+            'user.offerupNick': {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
             },
-            {
-              customerName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
-            },
-            {
-              productName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
-            },
-          ],
-        };
+          },
+          {
+            customerName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
+          },
+          {
+            productName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
+          },
+        ],
+      };
 
   let count = await Inquiry.countDocuments(query);
   let data = await Inquiry.find(query)
@@ -68,7 +68,7 @@ exports.getAllInquiries = catchAsync(async (req, res) => {
 // Get Inquiries By User ID
 exports.getInquiriesByUserId = catchAsync(async (req, res) => {
   let page = req.query.page || 1;
-  let limit = 10;
+  let limit = 30;
 
   let count = await Inquiry.countDocuments({
     'user.userId': req.params.userId,

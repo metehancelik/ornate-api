@@ -7,7 +7,7 @@ const User = require('../schemas/user');
 exports.getAllUsers = catchAsync(async (req, res) => {
   let queryParam = req.query.q;
   let page = req.query.page || 1;
-  let limit = 10;
+  let limit = 30;
   let query =
     queryParam == undefined
       ? {}

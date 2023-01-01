@@ -35,7 +35,7 @@ exports.createSale = catchAsync(async (req, res) => {
 exports.getAllSales = catchAsync(async (req, res) => {
   let queryParam = req.query.q;
   let page = req.query.page || 1;
-  let limit = 10;
+  let limit = 30;
 
   let query =
     queryParam === undefined
@@ -74,7 +74,7 @@ exports.getAllSales = catchAsync(async (req, res) => {
 exports.getUISales = catchAsync(async (req, res) => {
   let queryParam = req.query.q;
   let page = req.query.page || 1;
-  let limit = 10;
+  let limit = 30;
 
   let query =
     queryParam === undefined
@@ -120,10 +120,38 @@ exports.getUISales = catchAsync(async (req, res) => {
 
 // Get Sales By User ID
 exports.getSalesByUserId = catchAsync(async (req, res) => {
-  let data = await Sale.find({ 'user.userId': req.params.userId });
+  let queryParam = req.query.q;
+  let page = req.query.page || 1;
+  let limit = 30;
 
-  return res.status(200).send({ status: 'success', data });
-});
+  let query =
+    queryParam === undefined
+      ? {}
+      : {
+        $or: [
+          {
+            customerName: {
+              $regex: '.*' + queryParam + '.*',
+              $options: 'i',
+            },
+          },
+          {
+            productName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
+          },
+        ],
+      };
+
+  query = { ...query, 'user.userId': req.params.userId }
+
+  let count = await Sale.countDocuments(query);
+  let data = await Sale.find(query)
+    .sort({ createdAt: -1 })
+    .skip(limit * (page - 1))
+    .limit(limit);
+
+  return res.status(200).send({ status: 'success', count, data });
+}
+);
 
 // Get Sale By ID
 exports.getSaleById = catchAsync(async (req, res) => {

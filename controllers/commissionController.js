@@ -4,7 +4,7 @@ const Sale = require('../schemas/sale');
 // Get All Commissions
 exports.getAllCommissions = catchAsync(async (req, res) => {
   const { page = 1 } = req.query;
-  const limit = 10;
+  const limit = 30;
   const sales = await Sale.find({
     createdAt: { $gte: req.body.dateGte, $lt: req.body.dateLt },
   }).select({
@@ -17,13 +17,13 @@ exports.getAllCommissions = catchAsync(async (req, res) => {
 
   let data = sales.map(
     (sale) =>
-      (sale.offerupNick = {
-        commission: sale.commission,
-        firstName: sale.user.firstName,
-        lastName: sale.user.lastName,
-        revenue: sale.price,
-        offerupNick: sale.user.offerupNick,
-      })
+    (sale.offerupNick = {
+      commission: sale.commission,
+      firstName: sale.user.firstName,
+      lastName: sale.user.lastName,
+      revenue: sale.price,
+      offerupNick: sale.user.offerupNick,
+    })
   );
 
   const aggregateArray = (arr) => {
