@@ -5,12 +5,13 @@ const User = require('../schemas/user');
 // Create Sale
 exports.createSale = catchAsync(async (req, res) => {
   const { customerName, productName, price, isShared, userId, date } = req.body;
-  const { firstName, lastName, offerupNick, commissionRate, _id } =
+  const { firstName, lastName, offerupNick, commissionRate, billingInfo, _id } =
     await User.findById(userId).select({
       firstName: 1,
       lastName: 1,
       offerupNick: 1,
       commissionRate: 1,
+      'billingInfo.address': 1
     });
 
   const data = await Sale.create({
@@ -23,6 +24,7 @@ exports.createSale = catchAsync(async (req, res) => {
       offerupNick,
       firstName,
       lastName,
+      address: billingInfo.address,
       userId: _id.toString(),
     },
     date,

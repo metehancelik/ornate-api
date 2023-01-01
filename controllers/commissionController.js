@@ -13,6 +13,7 @@ exports.getAllCommissions = catchAsync(async (req, res) => {
     'user.firstName': 1,
     'user.lastName': 1,
     'user.offerupNick': 1,
+    'user.address': 1,
   });
 
   let data = sales.map(
@@ -23,6 +24,7 @@ exports.getAllCommissions = catchAsync(async (req, res) => {
       lastName: sale.user.lastName,
       revenue: sale.price,
       offerupNick: sale.user.offerupNick,
+      address: sale.user.address,
     })
   );
 
@@ -39,6 +41,7 @@ exports.getAllCommissions = catchAsync(async (req, res) => {
           commission: val.commission,
           firstName: val.firstName,
           lastName: val.lastName,
+          address: val.address,
         });
       }
       return acc;
