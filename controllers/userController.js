@@ -86,7 +86,7 @@ exports.updateMyProfile = catchAsync(async (req, res) => {
   res.status(204).send({ status: 'success' });
 });
 
-// Update User Password
+// Update My Password
 exports.updateMyPassword = catchAsync(async (req, res, next) => {
   const { oldPassword, password, passwordConfirm } = req.body;
 
@@ -118,4 +118,13 @@ exports.updateMyPassword = catchAsync(async (req, res, next) => {
     status: 'success',
     data: 'Password updated successfully!',
   });
+});
+
+// Delete User
+exports.deleteUser = catchAsync(async (req, res) => {
+
+
+  await User.findByIdAndDelete(req.params.userId);
+
+  res.status(204).send({ status: 'success' });
 });

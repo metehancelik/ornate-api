@@ -7,6 +7,7 @@ router
   .get('/:userId', userController.getUserById)
   .put('/:userId', userController.updateUserProfile)
   .put('/', userController.updateMyProfile)
-  .patch('/', userController.updateMyPassword);
+  .patch('/', userController.updateMyPassword)
+  .delete('/:userId', userController.deleteUser);
 
 module.exports = router;
