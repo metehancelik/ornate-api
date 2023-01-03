@@ -4,8 +4,8 @@ const User = require('../schemas/user');
 
 // Create Inquiry
 exports.createInquiry = catchAsync(async (req, res) => {
-  const { customerName, productName, to, notes, region, userId } = req.body;
-
+  const { customerName, productName, to, notes, region } = req.body;
+  let userId = req.userId
   const { firstName, lastName, offerupNick, _id } = await User.findById(
     userId
   ).select({

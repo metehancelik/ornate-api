@@ -4,8 +4,9 @@ const User = require('../schemas/user');
 
 // Create Call
 exports.createCall = catchAsync(async (req, res) => {
-  const { customerName, salesmanNote, callerNote, phone, isCalled, userId } =
+  const { customerName, salesmanNote, callerNote, phone, isCalled } =
     req.body;
+  let userId = req.userId;
 
   const { firstName, lastName, offerupNick, _id } = await User.findById(
     userId
