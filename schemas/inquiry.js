@@ -33,6 +33,7 @@ const InquirySchema = mongoose.Schema(
         'san diego',
         'los angeles',
         'outer areas',
+        'facebook'
       ],
       default: 'santa ana',
       required: true,
