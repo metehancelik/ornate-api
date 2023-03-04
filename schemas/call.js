@@ -17,8 +17,9 @@ const CallSchema = mongoose.Schema(
       required: true,
     },
     isCalled: {
-      type: Boolean,
-      default: false,
+      type: String,
+      enum: ['pending', 'in progress', 'done'],
+      default: 'pending',
     },
     salesmanNote: String,
     callerNote: String,
