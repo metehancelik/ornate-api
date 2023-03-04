@@ -1,11 +1,10 @@
-const catchAsync = require('../utils/catchAsync');
-const Call = require('../schemas/call');
-const User = require('../schemas/user');
+const catchAsync = require("../utils/catchAsync");
+const Call = require("../schemas/call");
+const User = require("../schemas/user");
 
 // Create Call
 exports.createCall = catchAsync(async (req, res) => {
-  const { customerName, salesmanNote, callerNote, phone, isCalled } =
-    req.body;
+  const { customerName, salesmanNote, callerNote, phone, isCalled } = req.body;
   let userId = req.userId;
 
   const { firstName, lastName, offerupNick, _id } = await User.findById(
@@ -30,37 +29,55 @@ exports.createCall = catchAsync(async (req, res) => {
     },
   });
 
-  res.status(201).send({ status: 'success', data });
+  res.status(201).send({ status: "success", data });
 });
 
 // Get All Calls
 exports.getAllCalls = catchAsync(async (req, res, next) => {
-  let queryParam = req.query.q;
+  let { offerupNick, firstName, customerName } = req.query;
+
   let page = req.query.page || 1;
   let limit = 30;
   let query =
-    queryParam === undefined
+    !offerupNick && !firstName && !customerName
       ? {}
       : {
-        $or: [
-          {
-            'user.offerupNick': {
-              $regex: '.*' + queryParam + '.*',
-              $options: 'i',
-            },
-          },
-          {
-            customerName: {
-              $regex: '.*' + queryParam + '.*',
-              $options: 'i',
-            },
-          },
-        ],
-      };
-  if (req.query.isCalled) {
-    let isCall = req.query.isCalled === 'true' ? true : false;
-    query = { ...query, isCalled: isCall };
-  }
+          $and: [
+            ...(offerupNick
+              ? [
+                  {
+                    "user.offerupNick": {
+                      $regex: ".*" + offerupNick + ".*",
+                      $options: "i",
+                    },
+                  },
+                ]
+              : []),
+            ...(firstName
+              ? [
+                  {
+                    "user.firstName": {
+                      $regex: ".*" + firstName + ".*",
+                      $options: "i",
+                    },
+                  },
+                ]
+              : []),
+            ...(customerName
+              ? [
+                  {
+                    customerName: {
+                      $regex: ".*" + customerName + ".*",
+                      $options: "i",
+                    },
+                  },
+                ]
+              : []),
+          ],
+        };
+
+  // Todo: check after isCalled property change (enum)
+  if (req.query.isCalled) query = { ...query, isCalled: req.query.isCalled };
 
   let count = await Call.countDocuments(query);
   let data = await Call.find(query)
@@ -68,38 +85,36 @@ exports.getAllCalls = catchAsync(async (req, res, next) => {
     .skip(limit * (page - 1))
     .limit(limit);
 
-  res.status(200).send({ status: 'success', count, data });
+  res.status(200).send({ status: "success", count, data });
 });
 
 // Get Calls By User ID
 exports.getCallsByUserId = catchAsync(async (req, res) => {
-  let queryParam = req.query.q;
+  let { customerName } = req.query;
   let page = req.query.page || 1;
   let limit = 30;
   let query =
-    queryParam === undefined
+    !customerName
       ? {}
       : {
-        $or: [
-          {
-            'user.offerupNick': {
-              $regex: '.*' + queryParam + '.*',
-              $options: 'i',
-            },
-          },
-          {
-            customerName: {
-              $regex: '.*' + queryParam + '.*',
-              $options: 'i',
-            },
-          },
-        ],
-      };
-  if (req.query.isCalled) {
-    let isCall = req.query.isCalled === 'true' ? true : false;
-    query = { ...query, isCalled: isCall };
-  }
-  query = { ...query, 'user.userId': req.userId };
+          $and: [
+            ...(customerName
+              ? [
+                  {
+                    customerName: {
+                      $regex: ".*" + customerName + ".*",
+                      $options: "i",
+                    },
+                  },
+                ]
+              : []),
+          ],
+        };
+
+  // Todo: check after isCalled property change (enum)
+  if (req.query.isCalled) query = { ...query, isCalled: req.query.isCalled };
+
+  query = { ...query, "user.userId": req.userId };
 
   let count = await Call.countDocuments(query);
   let data = await Call.find(query)
@@ -107,14 +122,14 @@ exports.getCallsByUserId = catchAsync(async (req, res) => {
     .skip(limit * (page - 1))
     .limit(limit);
 
-  return res.status(200).send({ status: 'success', count, data });
+  return res.status(200).send({ status: "success", count, data });
 });
 
 // Get Call By ID
 exports.getCallById = catchAsync(async (req, res) => {
   let data = await Call.findById(req.params.id);
 
-  return res.status(201).send({ status: 'success', data });
+  return res.status(201).send({ status: "success", data });
 });
 
 // Update Call
@@ -125,12 +140,12 @@ exports.updateCallById = catchAsync(async (req, res) => {
     { new: true, upsert: true }
   );
 
-  res.status(204).send({ status: 'success', data });
+  res.status(204).send({ status: "success", data });
 });
 
 // Delete Inquiry
 exports.deleteCallById = catchAsync(async (req, res) => {
   await Call.findByIdAndDelete({ _id: req.params.callId });
 
-  return res.status(204).send({ status: 'success' });
+  return res.status(204).send({ status: "success" });
 });

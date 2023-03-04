@@ -1,11 +1,11 @@
-const catchAsync = require('../utils/catchAsync');
-const Inquiry = require('../schemas/inquiry');
-const User = require('../schemas/user');
+const catchAsync = require("../utils/catchAsync");
+const Inquiry = require("../schemas/inquiry");
+const User = require("../schemas/user");
 
 // Create Inquiry
 exports.createInquiry = catchAsync(async (req, res) => {
   const { customerName, productName, to, notes, region } = req.body;
-  let userId = req.userId
+  let userId = req.userId;
   const { firstName, lastName, offerupNick, _id } = await User.findById(
     userId
   ).select({
@@ -28,33 +28,62 @@ exports.createInquiry = catchAsync(async (req, res) => {
     },
   });
 
-  res.status(201).send({ status: 'success', data });
+  res.status(201).send({ status: "success", data });
 });
 
 // Get All Inquiries
 exports.getAllInquiries = catchAsync(async (req, res) => {
-  let queryParam = req.query.q;
+  let { offerupNick, firstName, customerName, productName } = req.query;
+
   let page = req.query.page || 1;
   let limit = 30;
   let query =
-    queryParam === undefined
+    !offerupNick && !firstName && !customerName && !productName
       ? {}
       : {
-        $or: [
-          {
-            'user.offerupNick': {
-              $regex: '.*' + queryParam + '.*',
-              $options: 'i',
-            },
-          },
-          {
-            customerName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
-          },
-          {
-            productName: { $regex: '.*' + queryParam + '.*', $options: 'i' },
-          },
-        ],
-      };
+          $and: [
+            ...(offerupNick
+              ? [
+                  {
+                    "user.offerupNick": {
+                      $regex: ".*" + offerupNick + ".*",
+                      $options: "i",
+                    },
+                  },
+                ]
+              : []),
+            ...(firstName
+              ? [
+                  {
+                    "user.firstName": {
+                      $regex: ".*" + firstName + ".*",
+                      $options: "i",
+                    },
+                  },
+                ]
+              : []),
+            ...(customerName
+              ? [
+                  {
+                    customerName: {
+                      $regex: ".*" + customerName + ".*",
+                      $options: "i",
+                    },
+                  },
+                ]
+              : []),
+            ...(productName
+              ? [
+                  {
+                    productName: {
+                      $regex: ".*" + productName + ".*",
+                      $options: "i",
+                    },
+                  },
+                ]
+              : []),
+          ],
+        };
 
   let count = await Inquiry.countDocuments(query);
   let data = await Inquiry.find(query)
@@ -62,31 +91,59 @@ exports.getAllInquiries = catchAsync(async (req, res) => {
     .skip(limit * (page - 1))
     .limit(limit);
 
-  res.status(200).send({ status: 'success', count, data });
+  res.status(200).send({ status: "success", count, data });
 });
 
 // Get Inquiries By User ID
 exports.getInquiriesByUserId = catchAsync(async (req, res) => {
+  let { customerName, productName } = req.query;
   let page = req.query.page || 1;
   let limit = 30;
+  let query =
+    !customerName && !productName
+      ? {}
+      : {
+          $and: [
+            ...(customerName
+              ? [
+                  {
+                    customerName: {
+                      $regex: ".*" + customerName + ".*",
+                      $options: "i",
+                    },
+                  },
+                ]
+              : []),
+            ...(productName
+              ? [
+                  {
+                    productName: {
+                      $regex: ".*" + productName + ".*",
+                      $options: "i",
+                    },
+                  },
+                ]
+              : []),
+          ],
+        };
 
-  let count = await Inquiry.countDocuments({
-    'user.userId': req.params.userId,
-  });
+  query = { ...query, "user.userId": req.userId };
 
-  let data = await Inquiry.find({ 'user.userId': req.params.userId })
+  let count = await Inquiry.countDocuments(query);
+
+  let data = await Inquiry.find(query)
     .sort({ createdAt: -1 })
     .skip(limit * (page - 1))
     .limit(limit);
 
-  res.status(200).send({ status: 'success', count, data });
+  res.status(200).send({ status: "success", count, data });
 });
 
 // Get Inquiry By ID
 exports.getInquiryById = catchAsync(async (req, res) => {
   let data = await Inquiry.findById(req.params.id);
 
-  return res.status(201).send({ status: 'success', data });
+  return res.status(201).send({ status: "success", data });
 });
 
 // Update Inquiry
@@ -97,12 +154,12 @@ exports.updateInquiryById = catchAsync(async (req, res) => {
     { new: true, upsert: true }
   );
 
-  res.status(200).send({ status: 'success', data });
+  res.status(200).send({ status: "success", data });
 });
 
 // Delete Inquiry
 exports.deleteInquiryById = catchAsync(async (req, res) => {
   await Inquiry.findByIdAndDelete({ _id: req.params.inquiryId });
 
-  return res.status(204).send({ status: 'success' });
+  return res.status(204).send({ status: "success" });
 });
