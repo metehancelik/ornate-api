@@ -38,6 +38,14 @@ const InquirySchema = mongoose.Schema(
       default: 'santa ana',
       required: true,
     },
+    isImportant: {
+      type: Boolean,
+      default: false
+    },
+    isChecked: {
+      type: Boolean,
+      default: false
+    }
   },
   {
     timestamps: true,
